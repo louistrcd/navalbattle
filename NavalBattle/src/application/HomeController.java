@@ -79,7 +79,7 @@ public class HomeController implements Initializable{
                 	Tupple tupple = new Tupple(row, col);
                 	String successShot = "-fx-border-color : red;  -fx-border-width : 4";
                 	String missShot = "-fx-border-color : yellow;  -fx-border-width : 4";
-                	if(!listAttemptUser.contains(tupple) && !testVictory()) {
+                	if(!listAttemptUser.contains(tupple) && !listAttemptUser.containsAll(listCasesBoatComputer)) {
                 		listAttemptUser.add(tupple);
                 		if(listCasesBoatComputer.contains(tupple)) {
                     		item.setStyle(successShot);

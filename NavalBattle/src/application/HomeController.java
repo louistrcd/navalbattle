@@ -112,7 +112,7 @@ public class HomeController implements Initializable{
 					Tupple tupple = new Tupple(rowStart, i);
 					if(!listCasesBoatsSelected.contains(tupple)) {
 						listCasesBoatsSelected.add(tupple);
-						getNodeByRowColumnIndex(rowStart, i, gridPane).setStyle("-fx-background-color : yellow;");
+						getNodeByRowColumnIndex(rowStart, i, gridPane).setStyle("-fx-background-color : pink;");
 						}
 				}
 			}else if(colStart<5){
@@ -120,7 +120,7 @@ public class HomeController implements Initializable{
 					Tupple tupple = new Tupple(rowStart, i);
 					if(!listCasesBoatsSelected.contains(tupple)) {
 						listCasesBoatsSelected.add(tupple); 
-						getNodeByRowColumnIndex(rowStart, i, gridPane).setStyle("-fx-background-color : yellow;");
+						getNodeByRowColumnIndex(rowStart, i, gridPane).setStyle("-fx-background-color : pink;");
 						}
 				}
 			}else {
@@ -132,7 +132,7 @@ public class HomeController implements Initializable{
 					Tupple tupple = new Tupple(i, colStart);
 					if(!listCasesBoatsSelected.contains(tupple)) {
 						listCasesBoatsSelected.add(tupple);
-						getNodeByRowColumnIndex(i, colStart, gridPane).setStyle("-fx-background-color : yellow;");
+						getNodeByRowColumnIndex(i, colStart, gridPane).setStyle("-fx-background-color : pink;");
 						}
 				}
 			}else if(rowStart>5) {
@@ -140,7 +140,7 @@ public class HomeController implements Initializable{
 					Tupple tupple = new Tupple(i, colStart);
 					if(!listCasesBoatsSelected.contains(tupple)) {
 						listCasesBoatsSelected.add(tupple); 
-						getNodeByRowColumnIndex(i, colStart, gridPane).setStyle("-fx-background-color : yellow;");
+						getNodeByRowColumnIndex(i, colStart, gridPane).setStyle("-fx-background-color : pink;");
 						}
 				}
 			}

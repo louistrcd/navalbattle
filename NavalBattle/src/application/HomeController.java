@@ -1,13 +1,17 @@
 package application;
 
+import java.io.File;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.ResourceBundle;
 
 import application.HomeController.Tupple;
+import javafx.animation.PauseTransition;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -15,6 +19,10 @@ import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
+import javafx.util.Duration;
 
 public class HomeController implements Initializable{
 
@@ -27,6 +35,7 @@ public class HomeController implements Initializable{
 	private List<Tupple> listCasesBoatComputer;
 	private List<Tupple> listAttemptUser;
 	private List<Tupple> listAttemptComputer;
+	MediaPlayer mediaPlayer;
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -83,10 +92,17 @@ public class HomeController implements Initializable{
                 		listAttemptUser.add(tupple);
                 		if(listCasesBoatComputer.contains(tupple)) {
                     		item.setStyle(successShot);
+                    		playMusic("explosion.mp3", 0.7);
                     	}else {
                     		item.setStyle(missShot);
+                    		playMusic("miss.mp3", 1.2);
+//                    		String musicFile = "src/application/miss.mp3";     // For example
+//                    		Media sound = new Media(new File(musicFile).toURI().toString());
+//                    		MediaPlayer mediaPlayer = new MediaPlayer(sound);
+//                    		mediaPlayer.setStartTime(Duration.seconds(1));
+//                    		System.out.println(mediaPlayer.cycleDurationProperty());
+//                    		mediaPlayer.play();
                     	}
-                		
                 		testVictory();
                 	}
                 	
@@ -97,24 +113,37 @@ public class HomeController implements Initializable{
         });
     }
     
-    public void computerAttack() {
-
-    	Random r = new Random();
-		int row = r.nextInt(10);
-		int col = r.nextInt(10);
-		Tupple tupple = new Tupple(row, col);
-		if(!listAttemptComputer.contains(tupple)) {
-			listAttemptComputer.add(tupple);
-			if(listCasesBoatsSelected.contains(tupple)) {
-				getNodeByRowColumnIndex(row, col, gridPane).setStyle("-fx-border-color : red; -fx-background-color : blue;  -fx-border-width : 4");
-			}else {
-				getNodeByRowColumnIndex(row, col, gridPane).setStyle("-fx-border-color : yellow;  -fx-border-width : 4");
+    public void computerAttack(double pauseDuration) {
+    	PauseTransition pause = new PauseTransition(
+                Duration.seconds(pauseDuration)
+        ); 
+    	pause.setOnFinished(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent arg0) {
+		    	Random r = new Random();
+				int row = r.nextInt(10);
+				int col = r.nextInt(10);
+				String successShot = "-fx-border-color : red; -fx-background-color : blue;  -fx-border-width : 4";
+				String missShot = "-fx-border-color : yellow;  -fx-border-width : 4";
+				Tupple tupple = new Tupple(row, col);
+				if(!listAttemptComputer.contains(tupple)) {
+					listAttemptComputer.add(tupple);
+					if(listCasesBoatsSelected.contains(tupple)) {
+						getNodeByRowColumnIndex(row, col, gridPane).setStyle(successShot);
+						playMusic("explosion.mp3", 0.7);
+					}else {
+						getNodeByRowColumnIndex(row, col, gridPane).setStyle(missShot);
+						playMusic("miss.mp3", 1.2);
+					}
+				}else {
+					computerAttack(0);
+				}
+				if(listAttemptComputer.containsAll(listCasesBoatsSelected)) {
+					System.out.println("Sorry you loose..");
+				}
 			}
-		}
-		if(listAttemptComputer.containsAll(listCasesBoatsSelected)) {
-			System.out.println("Sorry you loose..");
-		}
-
+		});
+    	pause.play();
     }
     
     public boolean testVictory() {
@@ -123,12 +152,13 @@ public class HomeController implements Initializable{
     		System.out.println("Congratulations you won!!!");
     		b = true;
     	}else {
-    		computerAttack();
+    		computerAttack(0.9);
     	}
     	return b;
     }
     
     public void newGame() {
+    	playMusic("newgame.mp3", 0.2);
     	for(Node node : gridPane.getChildren()) {
     		Integer columnIndex = GridPane.getColumnIndex(node);
     		if(columnIndex!=null) {
@@ -144,8 +174,15 @@ public class HomeController implements Initializable{
         		p.setStyle(null);
     		}
     	} 
-    	
     	initBoats();
+    }
+    
+    public void playMusic(String music, double startTime){
+        String bip = "src/application/" + music;
+        Media hit = new Media(Paths.get(bip).toUri().toString());
+        mediaPlayer = new MediaPlayer(hit);
+        mediaPlayer.setStartTime(Duration.seconds(startTime));
+        mediaPlayer.play();
     }
     
     public void initBoats() {

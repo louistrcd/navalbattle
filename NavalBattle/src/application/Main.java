@@ -17,7 +17,7 @@ import javafx.scene.media.MediaPlayer;
 
 
 public class Main extends Application {
-	MediaPlayer mediaPlayer;
+	static MediaPlayer mediaPlayer;
 	@Override
 	public void start(Stage primaryStage) {
 		try {
@@ -38,7 +38,7 @@ public class Main extends Application {
 		}
 	}
 	
-    public void playMusic(String music, double startTime){
+    public static void playMusic(String music, double startTime){
         String bip = "src/application/" + music;
         Media hit = new Media(Paths.get(bip).toUri().toString());
         mediaPlayer = new MediaPlayer(hit);

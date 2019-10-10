@@ -1,14 +1,12 @@
 package application;
 
-import java.io.File;
 import java.net.URL;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.ResourceBundle;
 
-import application.HomeController.Tupple;
 import javafx.animation.PauseTransition;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -19,31 +17,34 @@ import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
 import javafx.util.Duration;
+import application.Main;
 
-public class HomeController implements Initializable{
+public class HomeController implements Initializable {
 
 	@FXML
 	private GridPane gridPane;
 	@FXML
 	private GridPane gridPaneShot;
-	
+
 	private List<Tupple> listCasesBoatsSelected;
 	private List<Tupple> listCasesBoatComputer;
 	private List<Tupple> listAttemptUser;
 	private List<Tupple> listAttemptComputer;
-	MediaPlayer mediaPlayer;
+	private List<List<Tupple>> listBoatUser;
+	private List<List<Tupple>> listBoatComputer;
+	
+	
+	String successShot = "-fx-border-color : red;  -fx-border-width : 4";
+	String missShot = "-fx-border-color : yellow;  -fx-border-width : 4";
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		if(gridPane!=null) {
+		if (gridPane != null) {
 			gridPane.setGridLinesVisible(true);
 			gridPaneShot.setGridLinesVisible(true);
-			for(int i = 0; i<10 ; i++) {
-				for(int j = 0 ; j<10 ; j++) {
+			for (int i = 0; i < 10; i++) {
+				for (int j = 0; j < 10; j++) {
 					Pane p1 = new Pane();
 					Pane p2 = new Pane();
 					gridPane.add(p1, i, j);
@@ -54,292 +55,270 @@ public class HomeController implements Initializable{
 		initBoats();
 		addGridEvent();
 	}
-	
-	public Node getNodeByRowColumnIndex (final int row, final int column, GridPane gridPane) {
-	    Node result = null;
-	    ObservableList<Node> childrens = gridPane.getChildren();
-	    for (Node node : childrens) {
-	    	Integer columnIndex = GridPane.getColumnIndex(node);
-	        if(columnIndex != null && GridPane.getRowIndex(node) == row && GridPane.getColumnIndex(node) == column) {
-	            result = node;
-	            break;
-	        }
-	    }
-	    return result;
-	}
-	
-    private void addGridEvent() {
-        gridPaneShot.getChildren().forEach(item -> {
-//            item.setOnMousePressed(new EventHandler<MouseEvent>() {
-//                @Override
-//                public void handle(MouseEvent event) {
-//                	item.setStyle("-fx-background-color : gray;");
-////                    if (event.getClickCount() == 1) {
-////                        System.out.println("doubleClick");
-////                    }
-//                }
-//            });
-            
-            item.setOnMouseReleased(new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent event) {
-                	int row = GridPane.getRowIndex(item);
-                	int col = GridPane.getColumnIndex(item);
-                	Tupple tupple = new Tupple(row, col);
-                	String successShot = "-fx-border-color : red;  -fx-border-width : 4";
-                	String missShot = "-fx-border-color : yellow;  -fx-border-width : 4";
-                	if(!listAttemptUser.contains(tupple) && !listAttemptUser.containsAll(listCasesBoatComputer)) {
-                		listAttemptUser.add(tupple);
-                		if(listCasesBoatComputer.contains(tupple)) {
-                    		item.setStyle(successShot);
-                    		playMusic("explosion.mp3", 0.7);
-                    	}else {
-                    		item.setStyle(missShot);
-                    		playMusic("miss.mp3", 1.2);
-//                    		String musicFile = "src/application/miss.mp3";     // For example
-//                    		Media sound = new Media(new File(musicFile).toURI().toString());
-//                    		MediaPlayer mediaPlayer = new MediaPlayer(sound);
-//                    		mediaPlayer.setStartTime(Duration.seconds(1));
-//                    		System.out.println(mediaPlayer.cycleDurationProperty());
-//                    		mediaPlayer.play();
-                    	}
-                		testVictory();
-                	}
-                	
-                	
-                }
-            });
 
-        });
-    }
-    
-    public void computerAttack(double pauseDuration) {
-    	PauseTransition pause = new PauseTransition(
-                Duration.seconds(pauseDuration)
-        ); 
-    	pause.setOnFinished(new EventHandler<ActionEvent>() {
+	public Node getNodeByRowColumnIndex(final int row, final int column, GridPane gridPane) {
+		Node result = null;
+		ObservableList<Node> childrens = gridPane.getChildren();
+		for (Node node : childrens) {
+			Integer columnIndex = GridPane.getColumnIndex(node);
+			if (columnIndex != null && GridPane.getRowIndex(node) == row && GridPane.getColumnIndex(node) == column) {
+				result = node;
+				break;
+			}
+		}
+		return result;
+	}
+
+	
+	
+	private void addGridEvent() {
+		gridPaneShot.getChildren().forEach(item -> {
+			item.setOnMouseReleased(new EventHandler<MouseEvent>() {
+				@Override
+				public void handle(MouseEvent event) {
+					int row = GridPane.getRowIndex(item);
+					int col = GridPane.getColumnIndex(item);
+					Tupple tupple = new Tupple(row, col);
+					if (!listAttemptUser.contains(tupple) && !testVictoryOrLoose()) {
+						listAttemptUser.add(tupple);
+						if (listCasesBoatComputer.contains(tupple)) {
+							item.setStyle(successShot);
+							checkBoatDestruction();
+							Main.playMusic("explosion.mp3", 0.7);
+						} else {
+							item.setStyle(missShot);
+							Main.playMusic("miss.mp3", 1.2);
+						}
+						if (!testVictoryOrLoose()) {
+							computerAttack(1);
+						}
+					}
+				}
+			});
+
+		});
+	}
+
+	public void computerAttack(double duration) {
+		PauseTransition pause = new PauseTransition(Duration.seconds(duration));
+		pause.setOnFinished(new EventHandler<ActionEvent>() {
 			@Override
-			public void handle(ActionEvent arg0) {
-		    	Random r = new Random();
+			public void handle(ActionEvent event) {
+				Random r = new Random();
 				int row = r.nextInt(10);
 				int col = r.nextInt(10);
 				String successShot = "-fx-border-color : red; -fx-background-color : blue;  -fx-border-width : 4";
 				String missShot = "-fx-border-color : yellow;  -fx-border-width : 4";
 				Tupple tupple = new Tupple(row, col);
-				if(!listAttemptComputer.contains(tupple)) {
+				if (!listAttemptComputer.contains(tupple)) {
 					listAttemptComputer.add(tupple);
-					if(listCasesBoatsSelected.contains(tupple)) {
+					if (listCasesBoatsSelected.contains(tupple)) {
 						getNodeByRowColumnIndex(row, col, gridPane).setStyle(successShot);
-						playMusic("explosion.mp3", 0.7);
-					}else {
+						checkBoatDestruction();
+						Main.playMusic("explosion.mp3", 0.7);
+					} else {
 						getNodeByRowColumnIndex(row, col, gridPane).setStyle(missShot);
-						playMusic("miss.mp3", 1.2);
+						Main.playMusic("miss.mp3", 1.2);
 					}
-				}else {
+				} else {
 					computerAttack(0);
 				}
-				if(listAttemptComputer.containsAll(listCasesBoatsSelected)) {
-					System.out.println("Sorry you loose..");
-				}
+				testVictoryOrLoose();
 			}
 		});
-    	pause.play();
-    }
-    
-    public boolean testVictory() {
-    	boolean b = false;
-    	if(listAttemptUser.containsAll(listCasesBoatComputer)) {
-    		System.out.println("Congratulations you won!!!");
-    		b = true;
-    	}else {
-    		computerAttack(0.9);
-    	}
-    	return b;
-    }
-    
-    public void newGame() {
-    	playMusic("newgame.mp3", 0.2);
-    	for(Node node : gridPane.getChildren()) {
-    		Integer columnIndex = GridPane.getColumnIndex(node);
-    		if(columnIndex!=null) {
-        		Pane p = (Pane) node;
-        		p.setStyle(null);
-    		}
-    	}
-    	
-    	for(Node node : gridPaneShot.getChildren()) {
-    		Integer columnIndex = GridPane.getColumnIndex(node);
-    		if(columnIndex!=null) {
-        		Pane p = (Pane) node;
-        		p.setStyle(null);
-    		}
-    	} 
-    	initBoats();
-    }
-    
-    public void playMusic(String music, double startTime){
-        String bip = "src/application/" + music;
-        Media hit = new Media(Paths.get(bip).toUri().toString());
-        mediaPlayer = new MediaPlayer(hit);
-        mediaPlayer.setStartTime(Duration.seconds(startTime));
-        mediaPlayer.play();
-    }
-    
-    public void initBoats() {
-    	listCasesBoatsSelected = new ArrayList<Tupple>();
-    	listCasesBoatComputer = new ArrayList<Tupple>();
-    	listAttemptUser = new ArrayList();
-    	listAttemptComputer = new ArrayList();
-    	initBoat(6, listCasesBoatsSelected);
-    	initBoat(4, listCasesBoatsSelected);
-    	initBoat(2, listCasesBoatsSelected);
-    	
-    	initBoatComputer(6, listCasesBoatComputer);
-    	initBoatComputer(4, listCasesBoatComputer);
-    	initBoatComputer(2, listCasesBoatComputer);
+		pause.play();
 
-    }
-    
-    public void initBoatComputer(int size, List<Tupple> list) {
-    	int boatSize = size;
-    	String boatStyle = "-fx-background-color : blue;";
-    	Random r = new Random();
-    	int orientation = r.nextInt(2); //0 = horizontal, 1 = vertical
+	}
+
+	public boolean testVictoryOrLoose() {
+		boolean b = false;
+		if (listAttemptUser.containsAll(listCasesBoatComputer)) {
+			System.out.println("Congratulations you won!!!");
+			b = true;
+		} else if (listAttemptComputer.containsAll(listCasesBoatsSelected)) {
+			System.out.println("Sorry you loose..");
+			b = true;
+		}
+		return b;
+	}
+
+	public void newGame() {
+		Main.playMusic("newgame.mp3", 0.2);
+		for (Node node : gridPane.getChildren()) {
+			Integer columnIndex = GridPane.getColumnIndex(node);
+			if (columnIndex != null) {
+				Pane p = (Pane) node;
+				p.setStyle(null);
+			}
+		}
+
+		for (Node node : gridPaneShot.getChildren()) {
+			Integer columnIndex = GridPane.getColumnIndex(node);
+			if (columnIndex != null) {
+				Pane p = (Pane) node;
+				p.setStyle(null);
+			}
+		}
+		initBoats();
+	}
+
+	public void initBoats() {
+		listCasesBoatsSelected = new ArrayList<Tupple>();
+		listCasesBoatComputer = new ArrayList<Tupple>();
+		listAttemptUser = new ArrayList<Tupple>();
+		listAttemptComputer = new ArrayList<Tupple>();
+		listBoatUser = new ArrayList();
+		listBoatComputer = new ArrayList();
+		initBoat(6, listCasesBoatsSelected);
+		initBoat(4, listCasesBoatsSelected);
+		initBoat(2, listCasesBoatsSelected);
+
+		initBoatComputer(6, listCasesBoatComputer);
+		initBoatComputer(4, listCasesBoatComputer);
+		initBoatComputer(2, listCasesBoatComputer);
+
+	}
+
+	public void initBoatComputer(int size, List<Tupple> list) {
+		int boatSize = size;
+		Random r = new Random();
+		int orientation = r.nextInt(2); // 0 = horizontal, 1 = vertical
 		int rowStart = r.nextInt(10);
 		int colStart = r.nextInt(10);
-		//System.out.println( orientation + " " + rowStart + " " + colStart + "\n");
-		if(orientation == 0) {
-			if(colStart>5) {
-				for(int i = colStart - boatSize; i<colStart ; i++) {
-					Tupple tupple = new Tupple(rowStart, i);
-					if(!list.contains(tupple)) {
-						list.add(tupple);
-						}
-				}
-			}else if(colStart<5){
-				for(int i = colStart; i<colStart + boatSize ; i++) {
-					Tupple tupple = new Tupple(rowStart, i);
-					if(!list.contains(tupple)) {
-						list.add(tupple); 
-						}
-				}
-			}else {
-				for(int i = 3; i< 3 +boatSize ; i++) {
-					Tupple tupple = new Tupple(rowStart, i);
-					if(!list.contains(tupple)) {
-						list.add(tupple);
-						}
-				}
-			}
-		}else if(orientation == 1) {
-			if(rowStart<5) {
-				for(int i = rowStart ; i<rowStart + boatSize; i++) {
-					Tupple tupple = new Tupple(i, colStart);
-					if(!list.contains(tupple)) {
-						list.add(tupple);
-						}
-				}
-			}else if(rowStart>5) {
-				for(int i = rowStart - boatSize ; i<rowStart ; i++) {
-					Tupple tupple = new Tupple(i, colStart);
-					if(!list.contains(tupple)) {
-						list.add(tupple); 
-						}
-				}
+		if (orientation == 0) {
+			if (colStart > 5) {
+				setCasesBoatHorizontal(colStart - boatSize, colStart, rowStart, colStart, boatSize, list);
+			} else if (colStart < 5) {
+				setCasesBoatHorizontal(colStart, colStart + boatSize, rowStart, colStart, boatSize, list);
 			} else {
-				for(int i = 3 ; i< 3 + boatSize ; i++) {
-					Tupple tupple = new Tupple(i, colStart);
-					if(!list.contains(tupple)) {
-						list.add(tupple);  
-						}
-				}
+				setCasesBoatHorizontal(3, 3 + boatSize, rowStart, colStart, boatSize, list);
+			}
+		} else if (orientation == 1) {
+			if (rowStart < 5) {
+				setCasesBoatVertical(rowStart, rowStart + boatSize, rowStart, colStart, boatSize, list);
+			} else if (rowStart > 5) {
+				setCasesBoatVertical(rowStart - boatSize, rowStart, rowStart, colStart, boatSize, list);
+			} else {
+				setCasesBoatVertical(3, 3 + boatSize, rowStart, colStart, boatSize, list);
+			}
+		}
+	}
+
+	public void initBoat(int size, List<Tupple> list) {
+		int boatSize = size;
+		String boatStyle = "-fx-background-color : blue;";
+		Random r = new Random();
+		int orientation = r.nextInt(2); // 0 = horizontal, 1 = vertical
+		int rowStart = r.nextInt(10);
+		int colStart = r.nextInt(10);
+		if (orientation == 0) {
+			if (colStart > 5) {
+				setCasesBoatHorizontal(colStart - boatSize, colStart, rowStart, colStart, boatSize, list);
+			} else if (colStart < 5) {
+				setCasesBoatHorizontal(colStart, colStart + boatSize, rowStart, colStart, boatSize, list);
+			} else {
+				setCasesBoatHorizontal(3, 3 + boatSize, rowStart, colStart, boatSize, list);
+			}
+		} else if (orientation == 1) {
+			if (rowStart < 5) {
+				setCasesBoatVertical(rowStart, rowStart + boatSize, rowStart, colStart, boatSize, list);
+			} else if (rowStart > 5) {
+				setCasesBoatVertical(rowStart - boatSize, rowStart, rowStart, colStart, boatSize, list);
+			} else {
+				setCasesBoatVertical(3, 3 + boatSize, rowStart, colStart, boatSize, list);
 			}
 
 		}
-    }
-    
-    public void initBoat(int size, List<Tupple> list) {
-    	int boatSize = size;
-    	String boatStyle = "-fx-background-color : blue;";
-    	Random r = new Random();
-    	int orientation = r.nextInt(2); //0 = horizontal, 1 = vertical
-		int rowStart = r.nextInt(10);
-		int colStart = r.nextInt(10);
-		//System.out.println( orientation + " " + rowStart + " " + colStart + "\n");
-		if(orientation == 0) {
-			if(colStart>5) {
-				for(int i = colStart - boatSize; i<colStart ; i++) {
-					Tupple tupple = new Tupple(rowStart, i);
-					if(!list.contains(tupple)) {
-						list.add(tupple);
-						getNodeByRowColumnIndex(rowStart, i, gridPane).setStyle(boatStyle);
-						}
-				}
-			}else if(colStart<5){
-				for(int i = colStart; i<colStart + boatSize ; i++) {
-					Tupple tupple = new Tupple(rowStart, i);
-					if(!list.contains(tupple)) {
-						list.add(tupple); 
-						getNodeByRowColumnIndex(rowStart, i, gridPane).setStyle(boatStyle);
-						}
-				}
-			}else {
-				for(int i = 3; i< 3 +boatSize ; i++) {
-					Tupple tupple = new Tupple(rowStart, i);
-					if(!list.contains(tupple)) {
-						list.add(tupple);
-						getNodeByRowColumnIndex(rowStart, i, gridPane).setStyle(boatStyle);
-						}
-				}
-			}
-		}else if(orientation == 1) {
-			if(rowStart<5) {
-				for(int i = rowStart ; i<rowStart + boatSize; i++) {
-					Tupple tupple = new Tupple(i, colStart);
-					if(!list.contains(tupple)) {
-						list.add(tupple);
-						getNodeByRowColumnIndex(i, colStart, gridPane).setStyle(boatStyle);
-						}
-				}
-			}else if(rowStart>5) {
-				for(int i = rowStart - boatSize ; i<rowStart ; i++) {
-					Tupple tupple = new Tupple(i, colStart);
-					if(!list.contains(tupple)) {
-						list.add(tupple); 
-						getNodeByRowColumnIndex(i, colStart, gridPane).setStyle(boatStyle);
-						}
-				}
-			} else {
-				for(int i = 3 ; i< 3 + boatSize ; i++) {
-					Tupple tupple = new Tupple(i, colStart);
-					if(!list.contains(tupple)) {
-						list.add(tupple);  
-						getNodeByRowColumnIndex(i, colStart, gridPane).setStyle(boatStyle);
-						}
-				}
-			}
-
+		for (Tupple tupple : list) {
+			getNodeByRowColumnIndex(tupple.getRow(), tupple.getCol(), gridPane).setStyle(boatStyle);
 		}
-    }
-    
-    public static class Tupple{
-    	int row;
-		int col;
 		
-    	public Tupple(int row, int col) {
-    		this.row = row;
-    		this.col = col;
-    	}
-    	
-    	public int getRow() {
+	}
+
+	public void setCasesBoatHorizontal(int inf, int sup, int rowStart, int colStart, int boatSize, List<Tupple> list) {
+		List<Tupple> listTemp = new ArrayList<Tupple>();
+		for (int i = inf; i < sup; i++) {
+			Tupple tupple = new Tupple(rowStart, i);
+			listTemp.add(tupple);
+		}
+		if (Collections.disjoint(listTemp, list)) {
+			list.addAll(listTemp);
+			if(list != listCasesBoatComputer) {
+				listBoatUser.add(listTemp);
+			}else {
+				listBoatComputer.add(listTemp);
+			}
+			
+		} else {
+			if(list != listCasesBoatComputer) {
+				initBoat(boatSize, list);
+			}else {
+				initBoatComputer(boatSize, list);
+			}
+		}
+	}
+	
+	public void checkBoatDestruction() {
+		for(List<Tupple> boat : listBoatComputer) {
+			if(listAttemptUser.containsAll(boat)) {
+				for(Tupple tupple : boat) {
+					getNodeByRowColumnIndex(tupple.getRow(), tupple.getCol(), gridPaneShot).setStyle("-fx-background-color : red;");
+				}
+			}
+		}
+		for(List<Tupple> boat : listBoatUser) {
+			if(listAttemptComputer.containsAll(boat)) {
+				for(Tupple tupple : boat) {
+					getNodeByRowColumnIndex(tupple.getRow(), tupple.getCol(), gridPane).setStyle("-fx-background-color : red;");
+				}
+			}
+		}
+		
+	}
+
+	public void setCasesBoatVertical(int inf, int sup, int rowStart, int colStart, int boatSize, List<Tupple> list) {
+		List<Tupple> listTemp = new ArrayList<Tupple>();
+		for (int i = inf; i < sup; i++) {
+			Tupple tupple = new Tupple(i, colStart);
+			listTemp.add(tupple);
+		}
+		if (Collections.disjoint(listTemp, list)) {
+			list.addAll(listTemp);
+			if(list != listCasesBoatComputer) {
+				listBoatUser.add(listTemp);
+			}else {
+				listBoatComputer.add(listTemp);
+			}
+		} else {
+			if(list != listCasesBoatComputer) {
+				initBoat(boatSize, list);
+			}else {
+				initBoatComputer(boatSize, list);
+			}
+		}
+	}
+
+	public static class Tupple {
+		int row;
+		int col;
+
+		public Tupple(int row, int col) {
+			this.row = row;
+			this.col = col;
+		}
+
+		public int getRow() {
 			return row;
 		}
+
 		public void setRow(int row) {
 			this.row = row;
 		}
+
 		public int getCol() {
 			return col;
 		}
+
 		public void setCol(int col) {
 			this.col = col;
 		}
@@ -368,14 +347,11 @@ public class HomeController implements Initializable{
 				return false;
 			return true;
 		}
-		
-		public void show() {
-			System.out.println("( " + row + " , " + col +" )");
-		}
-    	
-    
-    }
 
-	
+		public void show() {
+			System.out.println("( " + row + " , " + col + " )");
+		}
+
+	}
 
 }

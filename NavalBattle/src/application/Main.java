@@ -1,17 +1,23 @@
 package application;
 	
 import java.io.FileInputStream;
+import java.nio.file.Paths;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+
 
 
 
 public class Main extends Application {
+	MediaPlayer mediaPlayer;
 	@Override
 	public void start(Stage primaryStage) {
 		try {
@@ -26,10 +32,19 @@ public class Main extends Application {
 				e.printStackTrace();
 			}
 			primaryStage.show();
+			playMusic("welcome.mp3", 2.3);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
+	
+    public void playMusic(String music, double startTime){
+        String bip = "src/application/" + music;
+        Media hit = new Media(Paths.get(bip).toUri().toString());
+        mediaPlayer = new MediaPlayer(hit);
+        mediaPlayer.setStartTime(Duration.seconds(startTime));
+        mediaPlayer.play();
+    }
 	
 	public static void main(String[] args) {
 		

@@ -109,15 +109,24 @@ public class HomeController implements Initializable {
 				int col = r.nextInt(10);
 				String successShot = "-fx-border-color : red; -fx-background-color : blue;  -fx-border-width : 4";
 				String missShot = "-fx-border-color : yellow;  -fx-border-width : 4";
-				Tupple tupple = new Tupple(row, col);
+				Tupple tupple = null;
+				Tupple test = findAnotherCaseToAttack();
+				tupple = new Tupple(row, col);
+				if(test!=null && !listAttemptComputer.contains(test)&& test.getRow()>=0 && test.getCol()>=0) {
+					test.show();
+					tupple.setRow(test.getRow());
+					tupple.setCol(test.getCol());
+					tupple.show();
+				}
+				
 				if (!listAttemptComputer.contains(tupple)) {
 					listAttemptComputer.add(tupple);
 					if (listCasesBoatsSelected.contains(tupple)) {
-						getNodeByRowColumnIndex(row, col, gridPane).setStyle(successShot);
+						getNodeByRowColumnIndex(tupple.getRow(), tupple.getCol(), gridPane).setStyle(successShot);
 						checkBoatDestruction();
 						Main.playMusic("explosion.mp3", 0.7);
 					} else {
-						getNodeByRowColumnIndex(row, col, gridPane).setStyle(missShot);
+						getNodeByRowColumnIndex(tupple.getRow(), tupple.getCol(), gridPane).setStyle(missShot);
 						Main.playMusic("miss.mp3", 1.2);
 					}
 				} else {
@@ -127,7 +136,54 @@ public class HomeController implements Initializable {
 			}
 		});
 		pause.play();
-
+	}
+	
+	public Tupple findAnotherCaseToAttack() {
+		Tupple caseToAttack = null;
+		for(List<Tupple> list : listBoatUser) {
+			for(Tupple tupple : list) {
+				if(listAttemptComputer.contains(tupple) && !listAttemptComputer.containsAll(list)) {
+					int row = tupple.getRow();
+					int col = tupple.getCol();
+					caseToAttack = getNearCaseCoordinates(row, col);
+					//caseToAttack.show();
+				}
+			}
+		}
+		return caseToAttack;
+	}
+	
+	public Tupple getNearCaseCoordinates(int row, int col) {
+		Tupple caseToAttack = null;
+		caseToAttack = new Tupple(row+1, col);
+		boolean condition = getNodeByRowColumnIndex(caseToAttack.getRow(), caseToAttack.getCol(), gridPane)!=null
+				&& !listAttemptComputer.contains(caseToAttack);
+		if(!condition) {
+			condition = getNodeByRowColumnIndex(caseToAttack.getRow(), caseToAttack.getCol(), gridPane)!=null
+					&& !listAttemptComputer.contains(caseToAttack);
+			caseToAttack.setRow(row);
+			caseToAttack.setCol(col+1);
+			if(!condition) {
+				condition = getNodeByRowColumnIndex(caseToAttack.getRow(), caseToAttack.getCol(), gridPane)!=null
+						&& !listAttemptComputer.contains(caseToAttack);
+				caseToAttack.setRow(row - 1);
+				caseToAttack.setCol(col);
+				if(!condition) {
+					condition = getNodeByRowColumnIndex(caseToAttack.getRow(), caseToAttack.getCol(), gridPane)!=null
+							&& !listAttemptComputer.contains(caseToAttack);
+					caseToAttack.setRow(row);
+					caseToAttack.setCol(col-1);
+				}
+			}
+		}
+		return caseToAttack;
+		
+	}
+	
+	public void showEverything(List<Tupple> list) {
+		for(Tupple t : list) {
+			t.show();
+		}
 	}
 
 	public boolean testVictoryOrLoose() {

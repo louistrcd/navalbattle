@@ -18,9 +18,13 @@ import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Label;
+import javafx.scene.effect.BlurType;
+import javafx.scene.effect.Glow;
+import javafx.scene.effect.InnerShadow;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import application.Main;
 
@@ -30,7 +34,7 @@ public class HomeController implements Initializable {
 	private GridPane gridPane;
 	@FXML
 	private GridPane gridPaneShot;
-	
+
 	@FXML
 	private Label labelUser;
 	@FXML
@@ -44,8 +48,6 @@ public class HomeController implements Initializable {
 	private List<List<Tupple>> listBoatComputer;
 	private List<List<Tupple>> listDestroyedUser;
 	private List<List<Tupple>> listDestroyedComputer;
-	
-	
 
 	String successShot = "-fx-border-color : red;  -fx-border-width : 4";
 	String missShot = "-fx-background-color : #949494;";
@@ -59,6 +61,8 @@ public class HomeController implements Initializable {
 				for (int j = 0; j < 10; j++) {
 					Pane p1 = new Pane();
 					Pane p2 = new Pane();
+					glowEffectNode(p1);
+					glowEffectNode(p2);
 					gridPane.add(p1, i, j);
 					gridPaneShot.add(p2, i, j);
 				}
@@ -67,6 +71,31 @@ public class HomeController implements Initializable {
 		initBoats();
 		addGridEvent();
 	}
+	
+    public static void glowEffectNode(final Node n) {
+        final Node node = n;
+        node.setOnMouseEntered(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent arg0) {
+                if(node.getStyle()==null) {
+                	node.setStyle("-fx-background-color : #343538");
+                }
+                node.setEffect(new Glow());
+
+                //node.setStyle("");
+            }
+        });
+        node.setOnMouseExited(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent arg0) {
+                if (node.getEffect() == null) {
+                } else {
+                    node.setEffect(null);
+                }
+            }
+        });
+
+    }
 
 	public Node getNodeByRowColumnIndex(final int row, final int column, GridPane gridPane) {
 		Node result = null;
@@ -107,7 +136,16 @@ public class HomeController implements Initializable {
 					}
 				}
 			});
-
+			
+//			item.setOnMouseClicked(new EventHandler<MouseEvent>() {
+//				@Override
+//				public void handle(MouseEvent event) {
+//					int row = GridPane.getRowIndex(item);
+//					int col = GridPane.getColumnIndex(item);
+//					getNodeByRowColumnIndex(row, col, gridPaneShot).setEffect(new InnerShadow(BlurType.GAUSSIAN, Color.valueOf("#e6e6e6"), 10, 0, 0, 3));;
+//					
+//				}
+//			});
 		});
 	}
 
@@ -154,46 +192,73 @@ public class HomeController implements Initializable {
 
 	public Tupple findAnotherCaseToAttack() {
 		Tupple caseToAttack = null;
+		List<Tupple> allPossibleCases = new ArrayList();
 		for (List<Tupple> list : listBoatUser) {
 			for (Tupple tupple : list) {
 				if (listAttemptComputer.contains(tupple) && !listAttemptComputer.containsAll(list)) {
 					int row = tupple.getRow();
 					int col = tupple.getCol();
-					caseToAttack = getNearCaseCoordinates(row, col);
-					// caseToAttack.show();
+					List<Tupple> listNearCases = getNearCaseCoordinates(row, col);
+					for(Tupple t : listNearCases) {
+						if(!allPossibleCases.contains(t)) {
+							allPossibleCases.add(t);
+						}
+					}
 				}
 			}
+		}
+		if(allPossibleCases.size()>0) {
+			Random r = new Random();
+			int i = r.nextInt(allPossibleCases.size());
+			caseToAttack = allPossibleCases.get(i);
 		}
 		return caseToAttack;
 	}
 
-	public Tupple getNearCaseCoordinates(int row, int col) {
+	public List<Tupple> getNearCaseCoordinates(int row, int col) {
 		Tupple caseToAttack = null;
+		List<Tupple> listNearCases = new ArrayList();
 		caseToAttack = new Tupple(row + 1, col);
-		boolean condition = getNodeByRowColumnIndex(caseToAttack.getRow(), caseToAttack.getCol(), gridPane) != null
-				&& !listAttemptComputer.contains(caseToAttack);
-		if (!condition) {
-			condition = getNodeByRowColumnIndex(caseToAttack.getRow(), caseToAttack.getCol(), gridPane) != null
-					&& !listAttemptComputer.contains(caseToAttack);
-			caseToAttack.setRow(row);
-			caseToAttack.setCol(col + 1);
-			caseToAttack.show();
-			if (!condition) {
-				condition = getNodeByRowColumnIndex(caseToAttack.getRow(), caseToAttack.getCol(), gridPane) != null
-						&& !listAttemptComputer.contains(caseToAttack);
-				caseToAttack.setRow(row - 1);
-				caseToAttack.setCol(col);
-				caseToAttack.show();
-				if (!condition) {
-					condition = getNodeByRowColumnIndex(caseToAttack.getRow(), caseToAttack.getCol(), gridPane) != null
-							&& !listAttemptComputer.contains(caseToAttack);
-					caseToAttack.setRow(row);
-					caseToAttack.setCol(col - 1);
-					caseToAttack.show();
-				}
-			}
+
+		if (caseToAttack.getCol() >= 0 && caseToAttack.getRow() >= 0 && caseToAttack.getRow()<10 && caseToAttack.getCol()<10
+				&&!listNearCases.contains(caseToAttack) 
+				&& !listAttemptComputer.contains(caseToAttack)) {
+			Tupple tupple = new Tupple(caseToAttack.getRow(), caseToAttack.getCol());
+			listNearCases.add(tupple);
 		}
-		return caseToAttack;
+		
+		caseToAttack.setRow(row);
+		caseToAttack.setCol(col + 1);
+		
+		if (caseToAttack.getCol() >= 0 && caseToAttack.getRow() >= 0 && caseToAttack.getRow()<10 && caseToAttack.getCol()<10
+				&&!listNearCases.contains(caseToAttack) 
+				&& !listAttemptComputer.contains(caseToAttack)) {
+			Tupple tupple = new Tupple(caseToAttack.getRow(), caseToAttack.getCol());
+			listNearCases.add(tupple);
+		}
+		
+		caseToAttack.setRow(row - 1);
+		caseToAttack.setCol(col);
+		
+		if (caseToAttack.getCol() >= 0 && caseToAttack.getRow() >= 0 && caseToAttack.getRow()<10 && caseToAttack.getCol()<10
+				&&!listNearCases.contains(caseToAttack) 
+				&& !listAttemptComputer.contains(caseToAttack)) {
+			Tupple tupple = new Tupple(caseToAttack.getRow(), caseToAttack.getCol());
+			listNearCases.add(tupple);
+		}
+		
+		caseToAttack.setRow(row);
+		caseToAttack.setCol(col - 1);
+		
+		if (caseToAttack.getCol() >= 0 && caseToAttack.getRow() >= 0 && caseToAttack.getRow()<10 && caseToAttack.getCol()<10
+				&&!listNearCases.contains(caseToAttack) 
+				&& !listAttemptComputer.contains(caseToAttack)) {
+			Tupple tupple = new Tupple(caseToAttack.getRow(), caseToAttack.getCol());
+			listNearCases.add(tupple);
+		}
+
+		System.out.println("Taille liste itnermediaire  " + listNearCases.size());
+		return listNearCases;
 
 	}
 
@@ -264,24 +329,26 @@ public class HomeController implements Initializable {
 			if (list.get(0).getRow() == list.get(1).getRow()) {
 				for (Tupple tupple : list) {
 					getNodeByRowColumnIndex(tupple.getRow(), tupple.getCol(), gridPane).setStyle(
-							"-fx-border-style: solid none solid none; -fx-border-width : 5;-fx-border-color : #00e1ff; -fx-background-color : blue");
+							"-fx-border-style: solid none solid none; -fx-border-width : 5;-fx-border-color : #00e1ff; -fx-background-color : #0228d1");
 				}
 				getNodeByRowColumnIndex(list.get(0).getRow(), list.get(0).getCol(), gridPane).setStyle(
-						"-fx-border-style: solid none solid solid; -fx-border-width : 5;-fx-border-color : #00e1ff; -fx-background-color : blue");
-				getNodeByRowColumnIndex(list.get(list.size()-1).getRow(), list.get(list.size()-1).getCol(), gridPane).setStyle(
-						"-fx-border-style: solid solid solid none; -fx-border-width : 5;-fx-border-color : #00e1ff; -fx-background-color : blue");
+						"-fx-border-style: solid none solid solid; -fx-border-width : 5;-fx-border-color : #00e1ff; -fx-background-color : #0228d1");
+				getNodeByRowColumnIndex(list.get(list.size() - 1).getRow(), list.get(list.size() - 1).getCol(),
+						gridPane).setStyle(
+								"-fx-border-style: solid solid solid none; -fx-border-width : 5;-fx-border-color : #00e1ff; -fx-background-color : #0228d1");
 			}
-			
+
 			else if (list.get(0).getCol() == list.get(1).getCol()) {
-				
+
 				for (Tupple tupple : list) {
 					getNodeByRowColumnIndex(tupple.getRow(), tupple.getCol(), gridPane).setStyle(
-							"-fx-border-style: none none none none; -fx-border-width : 0 5 0 5;-fx-border-color : #00e1ff; -fx-background-color : blue");
+							"-fx-border-style: none none none none; -fx-border-width : 0 5 0 5;-fx-border-color : #00e1ff; -fx-background-color : #0228d1");
 				}
 				getNodeByRowColumnIndex(list.get(0).getRow(), list.get(0).getCol(), gridPane).setStyle(
-						"-fx-border-style: none none none none; -fx-border-width : 5 5 0 5;-fx-border-color : #00e1ff; -fx-background-color : blue");
-				getNodeByRowColumnIndex(list.get(list.size()-1).getRow(), list.get(list.size()-1).getCol(), gridPane).setStyle(
-						"-fx-border-style: none none none none; -fx-border-width : 0 5 5 5;-fx-border-color : #00e1ff; -fx-background-color : blue");
+						"-fx-border-style: none none none none; -fx-border-width : 5 5 0 5;-fx-border-color : #00e1ff; -fx-background-color : #0228d1");
+				getNodeByRowColumnIndex(list.get(list.size() - 1).getRow(), list.get(list.size() - 1).getCol(),
+						gridPane).setStyle(
+								"-fx-border-style: none none none none; -fx-border-width : 0 5 5 5;-fx-border-color : #00e1ff; -fx-background-color : #0228d1");
 			}
 		}
 
@@ -373,7 +440,7 @@ public class HomeController implements Initializable {
 					getNodeByRowColumnIndex(tupple.getRow(), tupple.getCol(), gridPaneShot)
 							.setStyle("-fx-background-color : red;");
 				}
-				if(!listDestroyedUser.contains(boat)) {
+				if (!listDestroyedUser.contains(boat)) {
 					listDestroyedUser.add(boat);
 				}
 				labelUser.setText("Nombre de bâteaux détruits : " + listDestroyedUser.size());
@@ -385,10 +452,10 @@ public class HomeController implements Initializable {
 					getNodeByRowColumnIndex(tupple.getRow(), tupple.getCol(), gridPane)
 							.setStyle("-fx-background-color : red;");
 				}
-				if(!listDestroyedComputer.contains(boat)) {
+				if (!listDestroyedComputer.contains(boat)) {
 					listDestroyedComputer.add(boat);
 				}
-				labelComputer.setText("Nombre de bâteaux détruits : " + listDestroyedUser.size());
+				labelComputer.setText("Nombre de bâteaux détruits : " + listDestroyedComputer.size());
 			}
 		}
 

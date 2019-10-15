@@ -18,6 +18,7 @@ import javafx.scene.media.MediaPlayer;
 
 public class Main extends Application {
 	static MediaPlayer mediaPlayer;
+	static MediaPlayer mediaPlayerSong;
 	@Override
 	public void start(Stage primaryStage) {
 		try {
@@ -32,11 +33,21 @@ public class Main extends Application {
 				e.printStackTrace();
 			}
 			primaryStage.show();
-			playMusic("welcome.mp3", 2.3);
+			playSoundtrack("soundtrack.mp3");
+			//playMusic("welcome.mp3", 2.3);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
+	
+    public static void playSoundtrack(String music){
+        String bip = "src/application/" + music;
+        Media hit = new Media(Paths.get(bip).toUri().toString());
+        mediaPlayerSong = new MediaPlayer(hit);
+        
+        mediaPlayerSong.setCycleCount(MediaPlayer.INDEFINITE);
+        mediaPlayerSong.play();
+    }
 	
     public static void playMusic(String music, double startTime){
         String bip = "src/application/" + music;
